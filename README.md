@@ -1,5 +1,5 @@
-# lib_mysqludf_stomp
-## a library to send STOMP messages
+## lib_mysqludf_stomp
+### a library to send STOMP messages
 
 Copyright 2005 LogicBlaze Inc.
 
