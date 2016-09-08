@@ -8,20 +8,20 @@ web of STOMP project: http://stomp.codehaus.org/
 email: barlone@yandex.ru
 
 
-### Installing on Ubuntu.
+# Installing on Ubuntu.
 
-## Requirements
+### Requirements
 In order do compile the plugin, you need to install Apache Portable Runtime (APR) and MySQL client development packages.
 
 sudo apt-get install libapr1 libapr1-dev libmysqlclient-dev
 
-## Install
+### Install
 To install the UDF, just run the provided install script which will compile and install the library.
 The MySQL root password will be requested for installing.
 
 sudo ./install.sh
 
-If you get errors of missing libraries, edit the Makefile and make sure the paths are correct for your system.
+#### If you get errors of missing libraries, edit the Makefile and make sure the paths are correct for your system.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
