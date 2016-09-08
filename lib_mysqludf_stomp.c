@@ -19,17 +19,6 @@
 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 	See the License for the specific language governing permissions and
 	limitations under the License.
-
-	Compile with (adapt the include and lib path to your environment):
-	> gcc -Wall -O2 -I/usr/local/include/apr-1 -I/usr/local/include/mysql \
-	  lib_mysqludf_stomp.c  /usr/local/lib/libapr-1.so -shared \
-	  -o lib_mysqludf_stomp.so
-        > strip ./lib_mysqludf_stomp.so
-	
-	Add the functions to MySQL with:
-	mysql> CREATE FUNCTION stompsend RETURNS STRING SONAME "lib_mysqludf_stomp.so";
-	mysql> CREATE FUNCTION stompsend1 RETURNS STRING SONAME "lib_mysqludf_stomp.so";
-	mysql> CREATE FUNCTION stompsend2 RETURNS STRING SONAME "lib_mysqludf_stomp.so";
 */
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__WIN32__) || defined(WIN32)
