@@ -8,7 +8,7 @@ web of STOMP project: http://stomp.codehaus.org/
 email: barlone@yandex.ru
 
 
-Compilation instructions for Ubuntu.
+### Compilation instructions for Ubuntu.
 In order do compile the plugin, you need to install Apache Portable Runtime (APR) and MySQL client development packages.
 
 sudo apt-get install libapr1 libapr1-dev libmysqlclient-dev
