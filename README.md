@@ -1,25 +1,27 @@
 lib_mysqludf_stomp - a library to send STOMP messages
 Copyright 2005 LogicBlaze Inc.
+
 Copyright (C) 2011 Dmitry Demianov aka barlone
 
 this library use part of libstomp code 
-
 web of STOMP project: http://stomp.codehaus.org/
 email: barlone@yandex.ru
 
 
-### Compilation instructions for Ubuntu.
+### Installing on Ubuntu.
+
+## Requirements
 In order do compile the plugin, you need to install Apache Portable Runtime (APR) and MySQL client development packages.
 
 sudo apt-get install libapr1 libapr1-dev libmysqlclient-dev
 
+## Install
 To install the UDF, just run the provided install script which will compile and install the library.
 The MySQL root password will be requested for installing.
 
 sudo ./install.sh
 
 If you get errors of missing libraries, edit the Makefile and make sure the paths are correct for your system.
-
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
