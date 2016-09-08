@@ -1,4 +1,4 @@
-lib_mysqludf_stomp - a library to send STOMP messages
+# lib_mysqludf_stomp - a library to send STOMP messages
 
 Copyright 2005 LogicBlaze Inc.
 
@@ -11,7 +11,7 @@ web of STOMP project: http://stomp.codehaus.org
 email: barlone@yandex.ru
 
 
-# Instructions for Ubuntu
+## Instructions for Ubuntu
 
 ### Install Dependencies
 In order do compile the plugin, you need to install Apache Portable Runtime (APR) and MySQL client development packages.
