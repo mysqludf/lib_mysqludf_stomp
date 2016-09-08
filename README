@@ -7,6 +7,20 @@ this library use part of libstomp code
 web of STOMP project: http://stomp.codehaus.org/
 email: barlone@yandex.ru
 
+
+Compilation instructions for Ubuntu.
+In order do compile the plugin, you need to install Apache Portable Runtime (APR) and MySQL client development packages.
+
+sudo apt-get install libapr1 libapr1-dev libmysqlclient-dev
+
+To install the UDF, just run the provided install script which will compile and install the library.
+The MySQL root password will be requested for installing.
+
+sudo ./install.sh
+
+If you get errors of missing libraries, edit the Makefile and make sure the paths are correct for your system.
+
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -19,15 +33,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
-Compile with (adapt the include and lib path to your environment):
-> gcc -Wall -O2 -I/usr/local/include/apr-1
-> -I/usr/local/include/mysql \
-  lib_mysqludf_stomp.c  /usr/local/lib/libapr-1.so -shared \
-  -o lib_mysqludf_stomp.so
-> strip ./lib_mysqludf_stomp.so
-
-Add the functions to MySQL with:
-mysql> CREATE FUNCTION stompsend RETURNS STRING SONAME "lib_mysqludf_stomp.so";
-mysql> CREATE FUNCTION stompsend1 RETURNS STRING SONAME "lib_mysqludf_stomp.so";
-mysql> CREATE FUNCTION stompsend2 RETURNS STRING SONAME "lib_mysqludf_stomp.so";
