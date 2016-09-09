@@ -1,17 +1,7 @@
-## lib_mysqludf_stomp - a library to send STOMP messages
+## lib_mysqludf_stomp
 
-Copyright 2005 LogicBlaze Inc.
-
-Copyright (C) 2011 Dmitry Demianov aka barlone
-
-this library use part of libstomp code
-
-web of STOMP project: http://stomp.codehaus.org
-
-email: barlone@yandex.ru
-
-Authentication support on stompsend2 added by hugorosario
-
+A MySQL UDF library to send STOMP messages to a message broker.
+Supports authentication using the stompsend2 function (see details below).
 
 ## Instructions for Ubuntu
 
@@ -30,16 +20,16 @@ The MySQL root password will be requested for installing.
 
 ### Using the functions
 
-Installing will provide you with 3 new functions you can use in your queries.
-All of them take the same first 3 parameters. 
-The difference between them are just the headers you can set.
+The plugin will provide you with 3 new functions you can use in your queries.
+All of them take the same first 3 parameters (Hostname, Topic, Message) and the others are headers.
+For authentication you must use stompsend2.
 All parameters are strings :
 
 - stompsend(Hostname, Topic, Message);
 - stompsend1(Hostname, Topic, Message, HeaderName, HeaderValue);
 - stompsend2(Hostname, Topic, Message, Header1Name, Header1Value, Header2Name, Header2Value);
 
-## Example
+### Example
 To send the message "Hello broker" to the "Welcome" topic on server "127.0.0.1", just use :
 
 `SELECT stompsend("127.0.0.1","Welcome", "Hello broker");`
@@ -63,6 +53,21 @@ This function was modified in this fork to allow authentication by sending the h
 #### Beware, if the credentials are invalid you will still receive an "OK" from the UDF, so you should NOT rely on that to verify the message was sent.
 
 
+## Credits
+
+Copyright 2005 LogicBlaze Inc.
+
+Copyright (C) 2011 Dmitry Demianov aka barlone
+
+this library use part of libstomp code
+
+web of STOMP project: http://stomp.codehaus.org
+
+email: barlone@yandex.ru
+
+Authentication support on stompsend2 added by hugorosario
+
+## Licence
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
