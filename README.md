@@ -45,7 +45,7 @@ If everything went well, you should get and "OK" response, else you will get a N
 1 row in set (0.00 sec)
 ```
 
-If you need to authenticate, you can use the `stompsend2` function with the "user" and "passcode" as headers.
+If you need to authenticate, you can use the `stompsend2` function with the "login" and "passcode" as headers.
 This function was modified in this fork to allow authentication by sending the headers on the CONNECT frame.
 
 `SELECT stompsend2("127.0.0.1","Welcome", "Hello broker", "login","guest","passcode","mypass");`
