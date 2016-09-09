@@ -2,6 +2,8 @@
 	lib_mysqludf_stomp - a library to send STOMP messages
 	Copyright 2005 LogicBlaze Inc.
 	Copyright (C) 2011 Dmitry Demianov aka barlone
+	
+	Authentication support on stompsend2 added by hugorosario
 
 	this library use part of libstomp code 
 
