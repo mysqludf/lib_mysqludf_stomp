@@ -22,7 +22,7 @@ The MySQL root password will be requested for installing.
 
 The plugin will provide you with 3 new functions you can use in your queries.
 All of them take the same first 3 parameters (Hostname, Topic, Message) and the others are headers.
-For authentication you must use stompsend2.
+For authentication you must use `stompsend2`.
 All parameters are strings :
 
 - stompsend(Hostname, Topic, Message);
