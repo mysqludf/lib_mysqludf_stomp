@@ -58,6 +58,7 @@ typedef long long longlong;
 #ifdef HAVE_DLOPEN
 
 #define LIBVERSION "lib_mysqludf_stomp version 0.2.0"
+#define BUFSIZE			4096
 
 /******************************************************************************
 ** function declarations
@@ -575,7 +576,30 @@ char *hdr2val = args->args[6];
 		*null_value = 1;
 		return NULL;
 	}
+	
+	////
+	
 
+	char buf[BUFSIZE];
+	apr_socket_timeout_set(connection->socket, 15000);
+	while (1) {
+		apr_size_t len = sizeof(buf);		
+		apr_status_t rc = apr_socket_recv(connection->socket, buf, &len);
+		if (rc == APR_EOF || len == 0) {
+			break;
+		}
+	}	
+	apr_socket_timeout_set(connection->socket, 1 * APR_USEC_PER_SEC);
+	
+	if (!strstr(buf,"CONNECTED")){
+		stomp_disconnect(&connection);
+		strcpy(error, "authentication failed");
+		*null_value = 1;
+		return NULL;			
+	}
+
+	//////
+	
 	frame.command = "SEND";
 	frame.headers = apr_hash_make(pool);
 	apr_hash_set(frame.headers, "destination", APR_HASH_KEY_STRING, topic);
