@@ -22,6 +22,10 @@
 	limitations under the License.
 */
 
+DROP FUNCTION IF EXISTS stompsend;
+DROP FUNCTION IF EXISTS stompsend1;
+DROP FUNCTION IF EXISTS stompsend2;
+
 CREATE FUNCTION stompsend RETURNS STRING SONAME "lib_mysqludf_stomp.so";
 CREATE FUNCTION stompsend1 RETURNS STRING SONAME "lib_mysqludf_stomp.so";
 CREATE FUNCTION stompsend2 RETURNS STRING SONAME "lib_mysqludf_stomp.so";

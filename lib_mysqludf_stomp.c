@@ -564,6 +564,8 @@ char *hdr2val = args->args[6];
 	
 	frame.command = "CONNECT";
 	frame.headers = apr_hash_make(pool);
+	apr_hash_set(frame.headers, hdr1name, APR_HASH_KEY_STRING, hdr1val);
+	apr_hash_set(frame.headers, hdr2name, APR_HASH_KEY_STRING, hdr2val);
 	frame.body = NULL;
 	frame.body_length = -1;
 	if (stomp_write(connection, &frame, pool) != APR_SUCCESS) { 
