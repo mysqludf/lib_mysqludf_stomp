@@ -57,7 +57,7 @@ typedef long long longlong;
 
 #ifdef HAVE_DLOPEN
 
-#define LIBVERSION "lib_mysqludf_stomp version 0.2.0"
+#define LIBVERSION "lib_mysqludf_stomp version 0.2.1"
 #define BUFSIZE			4096
 
 /******************************************************************************
@@ -545,6 +545,28 @@ void stompsend2_deinit(UDF_INIT *initid __attribute__((unused)))
 } // stompsend2_deinit
 /******************************************************************************/
 
+
+
+APR_DECLARE(apr_status_t) stomp_read(stomp_connection *connection, char *out){	
+	apr_status_t rc;
+	char buf[BUFSIZE];
+	apr_interval_time_t oldTimeout = 1 * APR_USEC_PER_SEC;
+	apr_socket_timeout_get(connection->socket, &oldTimeout); 
+	apr_socket_timeout_set(connection->socket, 15000);
+	while (1) {
+		apr_size_t len = sizeof(buf);		
+		rc = apr_socket_recv(connection->socket, buf, &len);
+		if (rc == APR_EOF || len == 0) {
+			rc = APR_SUCCESS;
+			strcpy(out, buf);
+			break;
+		}
+	}	
+	apr_socket_timeout_set(connection->socket, oldTimeout);
+	return rc;
+}
+
+
 char *stompsend2(UDF_INIT *initid, UDF_ARGS *args,
 			char *result, unsigned long *res_length, 
 			char *null_value, char *error)
@@ -577,28 +599,20 @@ char *hdr2val = args->args[6];
 		return NULL;
 	}
 	
-	////
-	
+	// validate CONNECT response	
 
-	char buf[BUFSIZE];
-	apr_socket_timeout_set(connection->socket, 15000);
-	while (1) {
-		apr_size_t len = sizeof(buf);		
-		apr_status_t rc = apr_socket_recv(connection->socket, buf, &len);
-		if (rc == APR_EOF || len == 0) {
-			break;
-		}
-	}	
-	apr_socket_timeout_set(connection->socket, 1 * APR_USEC_PER_SEC);
-	
-	if (!strstr(buf,"CONNECTED")){
+	char buf[BUFSIZE];	
+	if ((stomp_read(connection, buf) == APR_SUCCESS) && (!strstr(buf,"CONNECTED"))){
 		stomp_disconnect(&connection);
-		strcpy(error, "authentication failed");
+		//strcpy(result, buf);
+		//*res_length = strlen(result);		
+		//return result;
+		strcpy(error, "did not receive CONNECTED response");
 		*null_value = 1;
-		return NULL;			
+		return NULL;							
 	}
-
-	//////
+	
+	//CONNECT frame was successful, carry on with sending the message
 	
 	frame.command = "SEND";
 	frame.headers = apr_hash_make(pool);
