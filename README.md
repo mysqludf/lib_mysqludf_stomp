@@ -50,8 +50,7 @@ This function was modified in this fork to allow authentication by sending the h
 
 `SELECT stompsend2("127.0.0.1","Welcome", "Hello broker", "login","guest","passcode","mypass");`
 
-#### Beware, if the credentials are invalid you will still receive an "OK" from the UDF, so you should NOT rely on that to verify the message was sent.
-
+If the credentials are invalid, you should receive a NULL response.
 
 ## Credits
 
