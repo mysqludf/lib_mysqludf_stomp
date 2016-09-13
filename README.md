@@ -8,7 +8,7 @@ Supports authentication using the stompsend2 function (see details below).
 ### Install Dependencies
 In order do compile the plugin, you need to install Apache Portable Runtime (APR) and MySQL client development packages.
 
-`sudo apt-get install libapr1 libapr1-dev libmysqlclient-dev`
+`sudo apt-get install gcc libapr1 libapr1-dev libmysqlclient-dev`
 
 ### Compile & Install
 To install the UDF, just run the provided install script which will compile and install the library.
