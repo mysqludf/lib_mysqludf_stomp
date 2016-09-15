@@ -550,9 +550,9 @@ void stompsend2_deinit(UDF_INIT *initid __attribute__((unused)))
 APR_DECLARE(apr_status_t) stomp_read(stomp_connection *connection, char *out){	
 	apr_status_t rc;
 	char buf[BUFSIZE];
-	apr_interval_time_t oldTimeout = 1 * APR_USEC_PER_SEC;
-	apr_socket_timeout_get(connection->socket, &oldTimeout); 
-	apr_socket_timeout_set(connection->socket, 15000);
+	//apr_interval_time_t oldTimeout = 1 * APR_USEC_PER_SEC;
+	//apr_socket_timeout_get(connection->socket, &oldTimeout); 
+	//apr_socket_timeout_set(connection->socket, 15000);
 	while (1) {
 		apr_size_t len = sizeof(buf);		
 		rc = apr_socket_recv(connection->socket, buf, &len);
@@ -562,7 +562,7 @@ APR_DECLARE(apr_status_t) stomp_read(stomp_connection *connection, char *out){
 			break;
 		}
 	}	
-	apr_socket_timeout_set(connection->socket, oldTimeout);
+	//apr_socket_timeout_set(connection->socket, oldTimeout);
 	return rc;
 }
 
@@ -604,13 +604,15 @@ char *hdr2val = args->args[6];
 	char buf[BUFSIZE];	
 	if ((stomp_read(connection, buf) == APR_SUCCESS) && (!strstr(buf,"CONNECTED"))){
 		stomp_disconnect(&connection);
-		//strcpy(result, buf);
-		//*res_length = strlen(result);		
-		//return result;
+//		strcpy(result, buf);
+//		*res_length = strlen(result);
+//		return result;
 		strcpy(error, "did not receive CONNECTED response");
 		*null_value = 1;
+		strcpy(buf,"");		
 		return NULL;							
 	}
+	strcpy(buf,"");		
 	
 	//CONNECT frame was successful, carry on with sending the message
 	
