@@ -50,7 +50,7 @@ This function was modified in this fork to allow authentication by sending the h
 
 `SELECT stompsend2("127.0.0.1","Welcome", "Hello broker", "login","guest","passcode","mypass");`
 
-If the credentials are invalid, you should receive a NULL response.
+If the credentials are invalid, you should receive the body of the message sent by the broker (ex: "Access refused for client 'guest'.").
 
 ## Credits
 
