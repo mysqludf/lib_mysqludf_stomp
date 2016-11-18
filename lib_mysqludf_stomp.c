@@ -786,7 +786,7 @@ char *stompsend2(UDF_INIT *initid, UDF_ARGS *args,
 {
 stomp_connection *connection;
 stomp_frame frame;
-stomp_frame *readframe;
+// stomp_frame *readframe;
 char *host = args->args[0];
 char *topic = args->args[1];
 char *message = args->args[2];
@@ -814,7 +814,7 @@ char *hdr2val = args->args[6];
 	}
 	
 	// validate CONNECT response frame	
-
+/*
 	if (stomp_read(connection, &readframe, pool) != APR_SUCCESS) { 
 		strcpy(error, "stompsend2 could not receive response");
 		*null_value = 1;
@@ -834,7 +834,7 @@ char *hdr2val = args->args[6];
 			return NULL;
 		}
 	}
-
+*/
 	//CONNECT frame was successful, carry on with sending the message
 	
 	frame.command = "SEND";
