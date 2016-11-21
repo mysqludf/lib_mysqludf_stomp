@@ -2,6 +2,8 @@
 	lib_mysqludf_stomp - a library to send STOMP messages
 	Copyright 2005 LogicBlaze Inc.
 	Copyright (C) 2011 Dmitry Demianov aka barlone
+	
+	Authentication support on stompsend2 added by hugorosario
 
 	this library use part of libstomp code 
 
@@ -19,17 +21,6 @@
 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 	See the License for the specific language governing permissions and
 	limitations under the License.
-
-	Compile with (adapt the include and lib path to your environment):
-	> gcc -Wall -O2 -I/usr/local/include/apr-1 -I/usr/local/include/mysql \
-	  lib_mysqludf_stomp.c  /usr/local/lib/libapr-1.so -shared \
-	  -o lib_mysqludf_stomp.so
-        > strip ./lib_mysqludf_stomp.so
-	
-	Add the functions to MySQL with:
-	mysql> CREATE FUNCTION stompsend RETURNS STRING SONAME "lib_mysqludf_stomp.so";
-	mysql> CREATE FUNCTION stompsend1 RETURNS STRING SONAME "lib_mysqludf_stomp.so";
-	mysql> CREATE FUNCTION stompsend2 RETURNS STRING SONAME "lib_mysqludf_stomp.so";
 */
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__WIN32__) || defined(WIN32)
@@ -66,7 +57,8 @@ typedef long long longlong;
 
 #ifdef HAVE_DLOPEN
 
-#define LIBVERSION "lib_mysqludf_stomp version 0.2.0"
+#define LIBVERSION "lib_mysqludf_stomp version 0.2.1"
+#define BUFSIZE			4096
 
 /******************************************************************************
 ** function declarations
@@ -114,14 +106,29 @@ typedef struct stomp_frame {
    int body_length;
 } stomp_frame;
 
+typedef struct data_block_list {
+   char data[1024];
+   struct data_block_list *next;
+} data_block_list;
+
 static apr_pool_t *pool;
 
 #ifdef __cplusplus
 }
 #endif
+
+// ------------------------------------------------------------------------------
+// Helper functions 
 // ------------------------------------------------------------------------------
 
+int prefix(const char *pre, const char *str){
+    return strncmp(pre, str, strlen(pre));
+}
+
+// ------------------------------------------------------------------------------
 // STOMP functions 
+// ------------------------------------------------------------------------------
+
 
 /******************************************************************************
  * 
@@ -228,6 +235,153 @@ apr_size_t remaining = size;
 	return APR_SUCCESS;
 } // stomp_write_buffer
 
+APR_DECLARE(apr_status_t) stomp_read_line(stomp_connection *connection, char **data, int* length, apr_pool_t *pool)
+{
+   apr_pool_t *tpool;
+   apr_status_t rc;
+   data_block_list *head, *tail;
+   apr_size_t i=0;
+   apr_size_t bytesRead=0;
+   char *p;
+   
+   rc = apr_pool_create(&tpool, pool);
+   if( rc != APR_SUCCESS ) {
+      return rc;
+   }
+      
+   head = tail = apr_pcalloc(tpool, sizeof(data_block_list));
+   if( head == NULL )
+      return APR_ENOMEM;
+
+#define CHECK_SUCCESS if( rc!=APR_SUCCESS ) { apr_pool_destroy(tpool);	return rc; }
+	
+   while( 1 ) {
+      
+	  apr_size_t length = 1;
+      apr_status_t rc = apr_socket_recv(connection->socket, tail->data+i, &length);
+      CHECK_SUCCESS;
+      
+      if( length==1 ) {
+         i++;
+         bytesRead++;
+         
+         // Keep reading bytes till end of line
+         if( tail->data[i-1]=='\n') {
+            // Null terminate the string instead of having the newline
+		    tail->data[i-1] = 0;
+			break;
+         } else if( tail->data[i-1]==0 ) {
+			// Encountered 0 before end of line
+			apr_pool_destroy(tpool);
+			return APR_EGENERAL;
+		 }
+         
+         // Do we need to allocate a new block?
+         if( i >= sizeof( tail->data) ) {            
+            tail->next = apr_pcalloc(tpool, sizeof(data_block_list));
+            if( tail->next == NULL ) {
+               apr_pool_destroy(tpool);
+               return APR_ENOMEM;
+            }
+            tail=tail->next;
+            i=0;
+         }
+      }      
+	}
+
+#undef CHECK_SUCCESS
+   // Now we have the whole frame and know how big it is.  Allocate it's buffer
+   *data = apr_pcalloc(pool, bytesRead);
+   p = *data;
+   if( p==NULL ) {
+      apr_pool_destroy(tpool);
+      return APR_ENOMEM;
+   }
+
+   // Copy the frame over to the new buffer.
+   *length = bytesRead - 1;
+   for( ;head != NULL; head = head->next ) {
+      int len = bytesRead > sizeof(head->data) ? sizeof(head->data) : bytesRead;
+      memcpy(p,head->data,len);
+      p+=len;
+      bytesRead-=len;
+   }
+   
+   apr_pool_destroy(tpool);
+   return APR_SUCCESS;
+}
+
+APR_DECLARE(apr_status_t) stomp_read_buffer(stomp_connection *connection, char **data, apr_pool_t *pool)
+{
+   apr_pool_t *tpool;
+   apr_status_t rc;
+   data_block_list *head, *tail;
+   apr_size_t i=0;
+   apr_size_t bytesRead=0;
+   char *p;
+   
+   rc = apr_pool_create(&tpool, pool);
+   if( rc != APR_SUCCESS ) {
+      return rc;
+   }
+      
+   head = tail = apr_pcalloc(tpool, sizeof(data_block_list));
+   if( head == NULL )
+      return APR_ENOMEM;
+   
+#define CHECK_SUCCESS if( rc!=APR_SUCCESS ) { apr_pool_destroy(tpool);	return rc; }
+   
+   // Keep reading bytes till end of frame is encountered.
+	while( 1 ) {
+      
+		apr_size_t length = 1;
+      apr_status_t rc = apr_socket_recv(connection->socket, tail->data+i, &length);
+      CHECK_SUCCESS;
+      
+      if( length==1 ) {
+         i++;
+         bytesRead++;
+         
+         // Keep reading bytes till end of frame
+		 
+         if( tail->data[i-1]==0 ) {
+            break;
+         }
+		          
+         // Do we need to allocate a new block?
+         if( i >= sizeof( tail->data) ) {            
+            tail->next = apr_pcalloc(tpool, sizeof(data_block_list));
+            if( tail->next == NULL ) {
+               apr_pool_destroy(tpool);
+               return APR_ENOMEM;
+            }
+            tail=tail->next;
+            i=0;
+         }
+      }      
+	}
+#undef CHECK_SUCCESS
+   
+   // Now we have the whole frame and know how big it is.  Allocate it's buffer
+   *data = apr_pcalloc(pool, bytesRead);
+   p = *data;
+   if( p==NULL ) {
+      apr_pool_destroy(tpool);
+      return APR_ENOMEM;
+   }
+   
+   // Copy the frame over to the new buffer.
+   for( ;head != NULL; head = head->next ) {
+      int len = bytesRead > sizeof(head->data) ? sizeof(head->data) : bytesRead;
+      memcpy(p,head->data,len);
+      p+=len;
+      bytesRead-=len;
+   }
+   
+   apr_pool_destroy(tpool);
+	return APR_SUCCESS;
+}
+
 
 /********************************************************************************
  * 
@@ -300,6 +454,76 @@ apr_status_t rc;
 } // stomp_write
 
 
+APR_DECLARE(apr_status_t) stomp_read(stomp_connection *connection, stomp_frame **frame, apr_pool_t *pool) {
+   
+   apr_status_t rc;
+   stomp_frame *f;
+      
+   f = apr_pcalloc(pool, sizeof(stomp_frame));
+   if( f == NULL )
+      return APR_ENOMEM;
+   
+   f->headers = apr_hash_make(pool);
+   if( f->headers == NULL )
+      return APR_ENOMEM;
+         
+#define CHECK_SUCCESS if( rc!=APR_SUCCESS ) { return rc; }
+   
+   // Parse the frame out.   
+	char *p;
+	int length;
+	
+	// Parse the command.
+	rc = stomp_read_line(connection, &p, &length, pool);
+	CHECK_SUCCESS;
+
+	f->command = p;
+	
+	
+	// Start parsing the headers.
+	while( 1 ) {
+		rc = stomp_read_line(connection, &p, &length, pool);
+		CHECK_SUCCESS;
+		
+		// Done with headers
+		if(length == 0)
+		break;
+
+		{
+		// Parse the header line.
+		char *p2; 
+		void *key;
+		void *value;
+		
+		p2 = strstr(p,":");
+		if( p2 == NULL ) {
+			// Expected at 1 : to delimit the key from the value.
+			return APR_EGENERAL;
+		}
+		
+		// Null terminate the key
+		*p2=0;            
+		key = p;
+		
+		// The rest if the value.
+		value = p2+1;
+		
+		// Insert key/value into hash table.
+		apr_hash_set(f->headers, key, APR_HASH_KEY_STRING, value);            
+		}
+	}
+
+
+	// The remainder of the buffer (including the \n at the end) is the body)
+	rc = stomp_read_buffer(connection, &f->body, pool);
+	CHECK_SUCCESS;
+	  
+   
+#undef CHECK_SUCCESS
+   *frame = f;
+	return APR_SUCCESS;
+}
+
 my_bool stompsend_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 {
 
@@ -331,6 +555,7 @@ my_bool stompsend_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 
 	return 0;
 }
+
 
 /******************************************************************************
 ** purpose:	deallocate memory allocated by str_translate_init(); this func
@@ -539,6 +764,8 @@ my_bool stompsend2_init(UDF_INIT *initid, UDF_ARGS *args, char *message)
 	return 0;
 } // stompsend1_init
 
+
+
 /******************************************************************************
 ** purpose:	deallocate memory allocated by str_translate_init(); this func
 **					is called once for each query which invokes str_translate(),
@@ -559,6 +786,7 @@ char *stompsend2(UDF_INIT *initid, UDF_ARGS *args,
 {
 stomp_connection *connection;
 stomp_frame frame;
+// stomp_frame *readframe;
 char *host = args->args[0];
 char *topic = args->args[1];
 char *message = args->args[2];
@@ -575,6 +803,8 @@ char *hdr2val = args->args[6];
 	
 	frame.command = "CONNECT";
 	frame.headers = apr_hash_make(pool);
+	apr_hash_set(frame.headers, hdr1name, APR_HASH_KEY_STRING, hdr1val);
+	apr_hash_set(frame.headers, hdr2name, APR_HASH_KEY_STRING, hdr2val);
 	frame.body = NULL;
 	frame.body_length = -1;
 	if (stomp_write(connection, &frame, pool) != APR_SUCCESS) { 
@@ -582,7 +812,31 @@ char *hdr2val = args->args[6];
 		*null_value = 1;
 		return NULL;
 	}
+	
+	// validate CONNECT response frame	
+/*
+	if (stomp_read(connection, &readframe, pool) != APR_SUCCESS) { 
+		strcpy(error, "stompsend2 could not receive response");
+		*null_value = 1;
+		return NULL;
+	}
 
+	if (prefix("ERROR", readframe->command) == 0) {
+		if (strlen(readframe->body) > 0){
+			char * line = readframe->body;
+			line[strlen(line) - 1] = '\0';
+			strcpy(result, line);
+			*res_length = strlen(result);
+			return result;		
+		}else{
+			strcpy(error, "stompsend2 did not receive a CONNECTED response");
+			*null_value = 1;
+			return NULL;
+		}
+	}
+*/
+	//CONNECT frame was successful, carry on with sending the message
+	
 	frame.command = "SEND";
 	frame.headers = apr_hash_make(pool);
 	apr_hash_set(frame.headers, "destination", APR_HASH_KEY_STRING, topic);
